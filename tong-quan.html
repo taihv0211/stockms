@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tổng quan · Quản lý APT</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<script src="js/data.js"></script>
+<script src="js/shell.js"></script>
+<script>
+/* Màn hình 1 — Tổng quan (Admin, Lãnh đạo Cục) */
+(function () {
+  var el = APT.mount('tong-quan', 'Tổng quan');
+  if (!el) return;
+  var D = APT.data, pN = APT.products('ngoai'), pT = APT.products('trong');
+
+  el.innerHTML =
+    '<section><h2 class="sec-title">Tồn kho CLS (xuất ngoài nước)</h2>' +
+      APT.rowTable(pN, function (p) { return D.khoNgoai(p); }) + '</section>' +
+    '<section><h2 class="sec-title">Tồn kho CLS (xuất trong nước)</h2>' +
+      APT.rowTable(pT, function (p) { return D.khoTrong(p); }, {
+        under: function (p, i) {
+          return i < 2 ? '<a class="btn secondary small" href="chon-so.html?sp=' + p.id + '">Chọn số</a>' : '';
+        }
+      }) + '</section>' +
+    '<section><h2 class="sec-title">Tồn kho các CQĐD</h2><div id="filter"></div><div id="org"></div></section>';
+
+  function drawOrg(sel) {
+    var idxs = sel >= 0 ? [sel] : APT.allIdx();
+    document.getElementById('org').innerHTML = APT.orgTable(pN, idxs,
+      function (i, p) { return D.tonCQDD(i, p); },
+      function (p, ix) { return ix.reduce(function (s, i) { return s + D.tonCQDD(i, p); }, 0); });
+  }
+  APT.orgFilter(document.getElementById('filter'), drawOrg);
+  drawOrg(-1);
+})();
+</script>
+</body>
+</html>

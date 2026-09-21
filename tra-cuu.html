@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tra cứu APT · Quản lý APT</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<script src="js/data.js"></script>
+<script src="js/shell.js"></script>
+<script>
+/* Màn hình 10 — Tra cứu APT: nhập ký hiệu + số seri để biết đã cấp cho cơ quan nào */
+(function () {
+  var el = APT.mount('tra-cuu', 'Tra cứu APT');
+  if (!el) return;
+  var esc = APT.esc;
+  var seriProds = APT.allProducts().filter(function (p) { return p.seri; });
+
+  el.innerHTML =
+    '<form class="tra-cuu-form" id="f" autocomplete="off">' +
+      '<div class="field"><label for="sp">Tên APT</label><select class="input" id="sp">' +
+        seriProds.map(function (p) { return '<option value="' + p.id + '"' + (p.id === 'hcpt-kc' ? ' selected' : '') + '>' + esc(p.ten) + '</option>'; }).join('') +
+      '</select></div>' +
+      '<div class="field"><label for="kh">Ký hiệu</label><select class="input" id="kh">' +
+        APT.KY_HIEU.map(function (k) { return '<option>' + k + '</option>'; }).join('') + '</select></div>' +
+      '<div class="field"><label for="so">Nhập số seri</label><input class="input" id="so" inputmode="numeric" value="100.2657"></div>' +
+      '<button class="btn" type="submit">Tìm kiếm</button>' +
+    '</form>' +
+    '<div class="kq" id="kq"></div>';
+
+  function search() {
+    var sp = document.getElementById('sp').value, kh = document.getElementById('kh').value, so = document.getElementById('so').value.trim();
+    var prod = seriProds.filter(function (p) { return p.id === sp; })[0];
+    var no = APT.allProducts().filter(function (p) { return p.ngoai; }).indexOf(prod) + 1;
+    var box = document.getElementById('kq');
+    if (!/\d/.test(so)) { box.innerHTML = '<div class="banner warn" role="alert">Vui lòng nhập số seri cần tìm.</div>'; return; }
+    var hit = APT.timSeri(sp, kh, so);
+    if (!hit) {
+      box.innerHTML = '<div class="banner warn" role="alert"><b>Không tìm thấy.</b> Số seri ' + esc(kh + ' ' + so) + ' (' + esc(prod.ten) +
+        ') chưa được cấp cho cơ quan nào. Vui lòng kiểm tra lại tên APT, ký hiệu và số seri.</div>';
+      return;
+    }
+    var cq = hit.r.cq ? esc(hit.r.cq) : 'Còn trong kho Cục Lãnh sự (chưa cấp)';
+    box.innerHTML = '<h2 class="sec-title">Kết quả tra cứu:</h2><div class="tbl-wrap"><table class="tbl"><thead><tr>' +
+      '<th class="stt" scope="col" style="min-width:60px">STT</th><th scope="col" style="min-width:320px;text-align:left">Cơ quan</th><th scope="col">Tên APT</th><th scope="col">Ký hiệu</th><th scope="col">Số seri</th></tr></thead><tbody><tr>' +
+      '<td class="stt" style="text-align:center">' + (hit.stt || '–') + '</td><td style="font-weight:700">' + cq + '</td>' +
+      '<td style="text-align:center"><span style="font-size:14px;color:var(--ink-2)">(' + (no || '') + ')</span><br>' + esc(prod.nhom) + (prod.ct ? '<br>' + esc(prod.ct) : '') + '</td>' +
+      '<td style="text-align:center;font-weight:800;font-size:24px">' + esc(kh) + '</td><td style="text-align:center;font-weight:800;font-size:24px">' + esc(so) + '</td></tr></tbody></table></div>';
+  }
+  document.getElementById('f').onsubmit = function (e) { e.preventDefault(); search(); };
+  search();
+})();
+</script>
+</body>
+</html>

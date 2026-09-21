@@ -2,11 +2,33 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="refresh" content="0; url=login.html">
-<title>Quản lý Kho Ấn phẩm</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Đăng nhập · Quản lý APT</title>
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<p>Đang chuyển tới <a href="login.html">login.html</a>…</p>
+<div class="login-wrap">
+  <h1>Quản lý APT — Cục Lãnh sự</h1>
+  <p class="lead">Bản xem thử giao diện. Chọn một tài khoản để xem màn hình theo đúng quyền của tài khoản đó.</p>
+  <div class="acc-grid" id="acc"></div>
+  <p class="login-foot"><button type="button" id="reset">Xóa các phiếu và dữ liệu đã nhập thử</button></p>
+</div>
+<script src="js/data.js"></script>
+<script>
+(function () {
+  var esc = APT.esc;
+  document.getElementById('acc').innerHTML = APT.ROLE_ORDER.map(function (k) {
+    var r = APT.ROLES[k];
+    return '<a class="acc" href="' + r.home + '?role=' + k + '">' +
+      '<b>' + esc(r.ten) + '</b>' +
+      '<span class="u">Tên đăng nhập: ' + esc(r.user) + '</span>' +
+      '<span class="d">' + esc(r.mota) + '</span>' +
+      '<span class="go">Đăng nhập →</span></a>';
+  }).join('');
+  document.getElementById('reset').onclick = function () {
+    if (confirm('Xóa toàn bộ phiếu và dữ liệu đã nhập thử?')) { APT.store.clearAll(); alert('Đã xóa.'); }
+  };
+})();
+</script>
 </body>
 </html>
-`

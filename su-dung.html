@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Báo cáo sử dụng · Quản lý APT</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<script src="js/data.js"></script>
+<script src="js/shell.js"></script>
+<script>
+/* Màn hình 8 (ngoài nước) và 9 (trong nước): số lượng đã sử dụng */
+(function () {
+  var el = APT.mount('su-dung', 'Báo cáo sử dụng');
+  if (!el) return;
+  var D = APT.data, kind = 'ngoai', sel = -1, own = APT.roleOrgIdx();
+
+  el.innerHTML = '<div id="kinds"></div><div id="filter"></div><section><h2 class="sec-title" id="ttl"></h2><div id="data"></div></section>';
+
+  function draw() {
+    var prods = APT.products(kind);
+    document.getElementById('ttl').textContent = 'Số lượng đã sử dụng năm 2026 — ' + (kind === 'ngoai' ? 'ngoài nước' : 'trong nước');
+    var out;
+    if (kind === 'ngoai') {
+      var idxs = own || (sel >= 0 ? [sel] : APT.allIdx());
+      out = APT.orgTable(prods, idxs, function (i, p) { return D.suDung(i, p); },
+        function (p, ix) { return ix.reduce(function (s, i) { return s + D.suDung(i, p); }, 0); });
+    } else {
+      out = APT.rowTable(prods, function (p) { return D.suDung(-1, p); });
+    }
+    document.getElementById('data').innerHTML = out;
+    document.getElementById('filter').style.display = kind === 'ngoai' && !own ? '' : 'none';
+  }
+
+  APT.orgFilter(document.getElementById('filter'), function (i) { sel = i; draw(); });
+  APT.kindTabs(document.getElementById('kinds'), function (k) { kind = k; draw(); });
+})();
+</script>
+</body>
+</html>

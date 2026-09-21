@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xuất kho CLS · Quản lý APT</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<script src="js/data.js"></script>
+<script src="js/shell.js"></script>
+<script src="js/phieu.js"></script>
+<script>
+/* Màn hình 2 (xuất cho ngoài nước) và 3 (xuất cho trong nước) — có luồng duyệt VP → Cục */
+(function () {
+  var el = APT.mount('xuat-kho', 'Xuất kho CLS');
+  if (!el) return;
+  el.innerHTML = '<div id="tabs"></div><div id="phieu"></div>';
+
+  APT.kindTabs(document.getElementById('tabs'), function (kind) {
+    var host = document.getElementById('phieu');
+    // dựng lại phiếu mới: thay node để bỏ các sự kiện cũ
+    var fresh = host.cloneNode(false); host.parentNode.replaceChild(fresh, host);
+    APT.phieu({
+      mount: fresh, key: 'xuat.' + kind, kind: kind, sample: true, approvals: true,
+      xuat: { fixed: 'Cục Lãnh sự (VPC)' },
+      nhan: { options: kind === 'ngoai' ? APT.listNhanNgoai() : APT.listNhanTrong() },
+      qtyLabel: kind === 'ngoai' ? 'Số lượng ấn phẩm xuất CQĐD:' : 'Số lượng ấn phẩm nhận:',
+      doneText: 'Phiếu xuất kho đã được duyệt xong.'
+    });
+  });
+})();
+</script>
+</body>
+</html>

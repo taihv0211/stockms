@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quản lý tham số · Quản lý APT</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<script src="js/data.js"></script>
+<script src="js/shell.js"></script>
+<script>
+/* Màn hình 14 — Quản lý tham số → Tên đơn vị (chức năng: Cấp và nhận / Cấp / Nhận) */
+(function () {
+  var el = APT.mount('tham-so', 'Quản lý tham số');
+  if (!el) return;
+  var esc = APT.esc;
+
+  el.innerHTML =
+    '<div class="seg" role="tablist"><a class="seg-btn" href="tham-so-an-pham.html" style="text-decoration:none;display:inline-flex;align-items:center">Tên ấn phẩm</a>' +
+    '<a class="seg-btn on" href="tham-so-don-vi.html" style="text-decoration:none;display:inline-flex;align-items:center">Tên đơn vị</a></div>' +
+    '<div class="split">' +
+      '<section class="panel"><h2>Danh sách đơn vị</h2><ol class="listbox" id="list" style="padding:0"></ol></section>' +
+      '<section class="panel"><h2>Thêm mới</h2><form class="panel-body" id="f" autocomplete="off">' +
+        '<div class="field"><label for="ten">Nhập tên đơn vị</label><input class="input" id="ten"></div>' +
+        '<div class="field"><span class="lbl">Chức năng</span><div class="checks" role="radiogroup" aria-label="Chức năng">' +
+          '<label class="check"><input type="radio" name="cn" value="both" checked> Cấp và nhận</label>' +
+          '<label class="check"><input type="radio" name="cn" value="cap"> Cấp</label>' +
+          '<label class="check"><input type="radio" name="cn" value="nhan"> Nhận</label></div></div>' +
+        '<div id="msg"></div>' +
+        '<div><button class="btn" type="submit">Thêm mới</button></div>' +
+      '</form></section>' +
+    '</div>';
+
+  function fn(u) { return u.cap && u.nhan ? 'Cấp và nhận' : (u.cap ? 'Cấp' : 'Nhận'); }
+  function drawList() {
+    document.getElementById('list').innerHTML = APT.units().map(function (u, i) {
+      return '<li><span class="no">(' + (i + 1) + ')</span><span>' + esc(u.ten) + '</span><span class="tags"><span class="tag">' + fn(u) + '</span></span></li>';
+    }).join('');
+  }
+  drawList();
+
+  var form = document.getElementById('f'), msg = document.getElementById('msg');
+  if (!APT.role.act.quanLy) {
+    form.innerHTML = '<div class="banner info">Tài khoản này chỉ được xem danh sách.</div>';
+  }
+  form.onsubmit = function (e) {
+    e.preventDefault();
+    var ten = document.getElementById('ten').value.trim();
+    var cn = form.querySelector('input[name=cn]:checked').value;
+    if (!ten) { msg.innerHTML = '<div class="banner warn" role="alert">Vui lòng nhập tên đơn vị.</div>'; return; }
+    if (APT.units().some(function (u) { return u.ten.toLowerCase() === ten.toLowerCase(); })) {
+      msg.innerHTML = '<div class="banner warn" role="alert">Tên đơn vị này đã có trong danh sách.</div>'; return;
+    }
+    APT.addUnit(ten, cn !== 'nhan', cn !== 'cap');
+    msg.innerHTML = '<div class="banner ok" role="status">✔ Đã thêm “' + esc(ten) + '”.</div>';
+    document.getElementById('ten').value = '';
+    drawList();
+    var l = document.getElementById('list'); l.scrollTop = l.scrollHeight;
+  };
+})();
+</script>
+</body>
+</html>

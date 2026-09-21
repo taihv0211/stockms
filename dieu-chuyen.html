@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Điều chuyển APT · Quản lý APT</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<script src="js/data.js"></script>
+<script src="js/shell.js"></script>
+<script src="js/phieu.js"></script>
+<script>
+/* Màn hình 11 — Điều chuyển APT giữa Cục Lãnh sự và các phòng (trong nước) */
+(function () {
+  var el = APT.mount('dieu-chuyen', 'Điều chuyển APT');
+  if (!el) return;
+  el.innerHTML = '<div id="phieu"></div>';
+  APT.phieu({
+    mount: document.getElementById('phieu'), key: 'dieu-chuyen', kind: 'trong', sample: true, approvals: false,
+    xuat: { options: APT.listNoiBo(), def: 'Cục Lãnh sự (VPC)' },
+    nhan: { options: APT.listNoiBo() },
+    qtyLabel: 'Số lượng ấn phẩm nhận:',
+    doneText: 'Đã điều chuyển.'
+  });
+})();
+</script>
+</body>
+</html>

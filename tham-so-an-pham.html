@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quản lý tham số · Quản lý APT</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<script src="js/data.js"></script>
+<script src="js/shell.js"></script>
+<script>
+/* Màn hình 13 — Quản lý tham số → Tên ấn phẩm */
+(function () {
+  var el = APT.mount('tham-so', 'Quản lý tham số');
+  if (!el) return;
+  var esc = APT.esc;
+
+  el.innerHTML =
+    '<div class="seg" role="tablist"><a class="seg-btn on" href="tham-so-an-pham.html" style="text-decoration:none;display:inline-flex;align-items:center">Tên ấn phẩm</a>' +
+    '<a class="seg-btn" href="tham-so-don-vi.html" style="text-decoration:none;display:inline-flex;align-items:center">Tên đơn vị</a></div>' +
+    '<div class="split">' +
+      '<section class="panel"><h2>Danh sách ấn phẩm</h2><ol class="listbox" id="list" style="padding:0"></ol></section>' +
+      '<section class="panel"><h2>Thêm mới</h2><form class="panel-body" id="f" autocomplete="off">' +
+        '<div class="field"><label for="ten">Nhập tên ấn phẩm</label><input class="input" id="ten"></div>' +
+        '<div class="field"><label for="loai">Loại ấn phẩm</label><select class="input" id="loai"><option value="1">Có seri</option><option value="0">Không seri</option></select></div>' +
+        '<div class="field"><span class="lbl">Nơi sử dụng</span><div class="checks">' +
+          '<label class="check"><input type="checkbox" id="ngoai" checked> Ngoài nước</label>' +
+          '<label class="check"><input type="checkbox" id="trong"> Trong nước</label></div></div>' +
+        '<div id="msg"></div>' +
+        '<div><button class="btn" type="submit">Thêm mới</button></div>' +
+      '</form></section>' +
+    '</div>';
+
+  function drawList() {
+    document.getElementById('list').innerHTML = APT.allProducts().map(function (p, i) {
+      var tags = (p.seri ? '<span class="tag seri">Có seri</span>' : '<span class="tag">Không seri</span>') +
+        (p.ngoai ? '<span class="tag">Ngoài nước</span>' : '') + (p.trong ? '<span class="tag">Trong nước</span>' : '');
+      return '<li><span class="no">(' + (i + 1) + ')</span><span>' + esc(p.ten) + '</span><span class="tags">' + tags + '</span></li>';
+    }).join('');
+  }
+  drawList();
+
+  var form = document.getElementById('f'), msg = document.getElementById('msg');
+  if (!APT.role.act.quanLy) {
+    form.innerHTML = '<div class="banner info">Tài khoản này chỉ được xem danh sách.</div>';
+  }
+  form.onsubmit = function (e) {
+    e.preventDefault();
+    var ten = document.getElementById('ten').value.trim();
+    var ngoai = document.getElementById('ngoai').checked, trong = document.getElementById('trong').checked;
+    if (!ten) { msg.innerHTML = '<div class="banner warn" role="alert">Vui lòng nhập tên ấn phẩm.</div>'; return; }
+    if (!ngoai && !trong) { msg.innerHTML = '<div class="banner warn" role="alert">Vui lòng chọn ít nhất một nơi sử dụng.</div>'; return; }
+    if (APT.allProducts().some(function (p) { return p.ten.toLowerCase() === ten.toLowerCase(); })) {
+      msg.innerHTML = '<div class="banner warn" role="alert">Tên ấn phẩm này đã có trong danh sách.</div>'; return;
+    }
+    APT.addProduct(ten, document.getElementById('loai').value === '1', ngoai, trong);
+    msg.innerHTML = '<div class="banner ok" role="status">✔ Đã thêm “' + esc(ten) + '”.</div>';
+    document.getElementById('ten').value = '';
+    drawList();
+    var l = document.getElementById('list'); l.scrollTop = l.scrollHeight;
+  };
+})();
+</script>
+</body>
+</html>

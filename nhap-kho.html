@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nhập kho CLS · Quản lý APT</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<script src="js/data.js"></script>
+<script src="js/shell.js"></script>
+<script src="js/phieu.js"></script>
+<script>
+/* Màn hình 4 (nhập kho ngoài nước) và 5 (nhập kho trong nước) */
+(function () {
+  var el = APT.mount('nhap-kho', 'Nhập kho CLS');
+  if (!el) return;
+  el.innerHTML = '<div id="tabs"></div><div id="phieu"></div>';
+
+  APT.kindTabs(document.getElementById('tabs'), function (kind) {
+    var host = document.getElementById('phieu');
+    var fresh = host.cloneNode(false); host.parentNode.replaceChild(fresh, host);
+    APT.phieu({
+      mount: fresh, key: 'nhap.' + kind, kind: kind, sample: true, approvals: false,
+      xuat: { options: APT.listNguon() },
+      nhan: { fixed: 'Cục Lãnh sự (VPC)' },
+      qtyLabel: 'Số lượng ấn phẩm nhận:',
+      doneText: 'Đã nhập kho.'
+    });
+  });
+})();
+</script>
+</body>
+</html>

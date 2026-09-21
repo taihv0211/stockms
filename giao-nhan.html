@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Báo cáo giao nhận · Quản lý APT</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<script src="js/data.js"></script>
+<script src="js/shell.js"></script>
+<script>
+/* Màn hình 6 (ngoài nước) và 7 (trong nước): 4 bảng dự toán / đã nhận / còn nhận / % đã nhận */
+(function () {
+  var el = APT.mount('giao-nhan', 'Báo cáo giao nhận');
+  if (!el) return;
+  var D = APT.data, YEAR = 2026;
+  var TABS = [
+    { id: 'du',  ten: 'Số lượng dự toán năm ' + YEAR },
+    { id: 'da',  ten: 'Số lượng đã nhận năm ' + YEAR },
+    { id: 'con', ten: 'Số lượng còn nhận năm ' + YEAR },
+    { id: 'pct', ten: 'Tỷ lệ % đã nhận năm ' + YEAR }
+  ];
+  var kind = 'ngoai', tab = 'du', sel = -1, own = APT.roleOrgIdx();
+
+  el.innerHTML = '<div id="kinds"></div><div id="tabs"></div><div id="filter"></div><section><h2 class="sec-title" id="ttl"></h2><div id="data"></div></section>';
+
+  function value(i, p, t) {
+    var g = D.giaoNhan(i, p);
+    return t === 'du' ? g.du : t === 'da' ? g.da : t === 'con' ? g.con : g.pct;
+  }
+  function total(p, idxs, t) {
+    var du = 0, da = 0;
+    idxs.forEach(function (i) { var g = D.giaoNhan(i, p); du += g.du; da += g.da; });
+    return t === 'du' ? du : t === 'da' ? da : t === 'con' ? du - da : (du ? Math.round(da * 100 / du) : null);
+  }
+  function draw() {
+    var prods = APT.products(kind), t = tab, isPct = t === 'pct';
+    var name = TABS.filter(function (x) { return x.id === t; })[0].ten;
+    document.getElementById('ttl').textContent = name + ' — ' + (kind === 'ngoai' ? 'ngoài nước' : 'trong nước');
+    var out;
+    if (kind === 'ngoai') {
+      var idxs = own || (sel >= 0 ? [sel] : APT.allIdx());
+      out = APT.orgTable(prods, idxs, function (i, p) { return value(i, p, t); }, function (p, ix) { return total(p, ix, t); }, { pct: isPct });
+    } else {
+      out = APT.rowTable(prods, function (p) { return value(-1, p, t); }, { pct: isPct });
+    }
+    document.getElementById('data').innerHTML = out;
+    document.getElementById('filter').style.display = kind === 'ngoai' && !own ? '' : 'none';
+  }
+
+  APT.tabs(document.getElementById('tabs'), TABS, tab, function (id) { tab = id; draw(); }, 'sub');
+  APT.orgFilter(document.getElementById('filter'), function (i) { sel = i; draw(); });
+  APT.kindTabs(document.getElementById('kinds'), function (k) { kind = k; draw(); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quản lý tài khoản · Quản lý APT</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<script src="js/data.js"></script>
+<script src="js/shell.js"></script>
+<script>
+/* Màn hình 15 — Quản lý tài khoản: nhóm → tài khoản; thêm mới (tên, tên đăng nhập, đơn vị dùng, mật khẩu) */
+(function () {
+  var el = APT.mount('tai-khoan', 'Quản lý tài khoản');
+  if (!el) return;
+  var esc = APT.esc;
+  var GROUPS = ['Kho', 'VP', 'LSNN', 'XNC', 'ĐSQVN tại…', 'Lãnh đạo Cục'];
+  var accounts = APT.store.get('accounts', null) || [
+    { g: 0, user: 'kho',  ten: 'Thủ kho',                       don: ['Cục Lãnh sự (VPC)'] },
+    { g: 1, user: 'vp',   ten: 'Văn phòng Cục',                 don: ['Cục Lãnh sự (VPC)'] },
+    { g: 2, user: 'lsnn', ten: 'Phòng LSNN',                    don: ['Phòng LSNN'] },
+    { g: 3, user: 'xnc',  ten: 'Phòng XNC',                     don: ['Phòng XNC'] },
+    { g: 4, user: 'ant',  ten: 'Đại sứ quán Việt Nam tại Anh',  don: ['Đại sứ quán Việt Nam tại Anh'] },
+    { g: 5, user: 'ctr',  ten: 'Lãnh đạo Cục 1',                don: ['Cục Lãnh sự (VPC)'] },
+    { g: 5, user: 'pctr', ten: 'Lãnh đạo Cục 2',                don: ['Cục Lãnh sự (VPC)'] }
+  ];
+  var cur = 0, checked = {};
+
+  el.innerHTML =
+    '<div class="split three">' +
+      '<section class="panel"><h2>Nhóm người dùng</h2><ol class="listbox" id="groups" style="padding:0"></ol></section>' +
+      '<section class="panel"><h2>Tài khoản</h2><ul class="listbox" id="users"></ul></section>' +
+      '<section class="panel"><h2>Thêm mới</h2><form class="panel-body" id="f" autocomplete="off">' +
+        '<div class="field"><label for="ten">Nhập tên / bộ phận sử dụng</label><input class="input" id="ten"></div>' +
+        '<div class="field"><label for="user">Tên đăng nhập</label><input class="input" id="user"></div>' +
+        '<div class="field"><label for="grp">Nhóm người dùng</label><select class="input" id="grp">' +
+          GROUPS.map(function (g, i) { return '<option value="' + i + '">' + esc(g) + '</option>'; }).join('') + '</select></div>' +
+        '<div class="field"><span class="lbl">Đơn vị dùng</span>' +
+          '<input class="input" id="find" placeholder="Gõ để tìm đơn vị" aria-label="Tìm đơn vị" style="margin-bottom:8px">' +
+          '<div class="check-scroll" id="units"></div></div>' +
+        '<div class="field"><label for="p1">Nhập mật khẩu</label><input class="input" id="p1" type="password" autocomplete="new-password"></div>' +
+        '<div class="field"><label for="p2">Nhập lại mật khẩu</label><input class="input" id="p2" type="password" autocomplete="new-password"></div>' +
+        '<div id="msg"></div>' +
+        '<div><button class="btn" type="submit">Xác nhận</button></div>' +
+      '</form></section>' +
+    '</div>';
+
+  function drawGroups() {
+    document.getElementById('groups').innerHTML = GROUPS.map(function (g, i) {
+      return '<li class="pick' + (i === cur ? ' on' : '') + '" data-g="' + i + '" tabindex="0" role="button"><span class="no">(' + (i + 1) + ')</span><span>' + esc(g) + '</span></li>';
+    }).join('');
+  }
+  function drawUsers() {
+    var list = accounts.filter(function (a) { return a.g === cur; });
+    document.getElementById('users').innerHTML = list.length ? list.map(function (a) {
+      return '<li><span><b>' + esc(a.user) + '</b><br><span style="font-size:15px;color:var(--ink-2)">' + esc(a.ten) + '</span></span></li>';
+    }).join('') : '<li><span class="st-idle">Chưa có tài khoản</span></li>';
+  }
+  function drawUnits() {
+    var q = document.getElementById('find').value.trim().toLowerCase();
+    document.getElementById('units').innerHTML = APT.units().filter(function (u) { return !q || u.ten.toLowerCase().indexOf(q) >= 0; }).map(function (u) {
+      return '<label class="check"><input type="checkbox" value="' + esc(u.ten) + '"' + (checked[u.ten] ? ' checked' : '') + '> ' + esc(u.ten) + '</label>';
+    }).join('') || '<span class="st-idle">Không tìm thấy đơn vị</span>';
+  }
+  function pickGroup(t) {
+    var li = t.closest('[data-g]'); if (!li) return;
+    cur = +li.getAttribute('data-g'); document.getElementById('grp').value = cur; drawGroups(); drawUsers();
+  }
+  document.getElementById('groups').addEventListener('click', function (e) { pickGroup(e.target); });
+  document.getElementById('groups').addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickGroup(e.target); } });
+  document.getElementById('find').addEventListener('input', drawUnits);
+  drawGroups(); drawUsers(); drawUnits();
+
+  var form = document.getElementById('f'), msg = document.getElementById('msg');
+  if (!APT.role.act.quanLy) {
+    form.innerHTML = '<div class="banner info">Tài khoản này chỉ được xem danh sách.</div>';
+    return;
+  }
+  document.getElementById('units').addEventListener('change', function (e) { checked[e.target.value] = e.target.checked; });
+
+  form.onsubmit = function (e) {
+    e.preventDefault();
+    var ten = document.getElementById('ten').value.trim(), user = document.getElementById('user').value.trim().toLowerCase();
+    var p1 = document.getElementById('p1').value, p2 = document.getElementById('p2').value;
+    var don = Object.keys(checked).filter(function (k) { return checked[k]; });
+    var err = [];
+    if (!ten) err.push('Chưa nhập tên / bộ phận sử dụng.');
+    if (!user) err.push('Chưa nhập tên đăng nhập.');
+    else if (accounts.some(function (a) { return a.user === user; })) err.push('Tên đăng nhập “' + user + '” đã có người dùng.');
+    if (!don.length) err.push('Chưa chọn đơn vị dùng.');
+    if (p1.length < 6) err.push('Mật khẩu phải có ít nhất 6 ký tự.');
+    else if (p1 !== p2) err.push('Mật khẩu nhập lại chưa khớp.');
+    if (err.length) { msg.innerHTML = '<div class="banner bad" role="alert">Chưa thể lưu:<ul>' + err.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>'; return; }
+    accounts.push({ g: +document.getElementById('grp').value, user: user, ten: ten, don: don });
+    APT.store.set('accounts', accounts);
+    cur = +document.getElementById('grp').value; drawGroups(); drawUsers();
+    msg.innerHTML = '<div class="banner ok" role="status">✔ Đã tạo tài khoản “' + esc(user) + '”.</div>';
+    ['ten', 'user', 'p1', 'p2'].forEach(function (id) { document.getElementById(id).value = ''; });
+    checked = {}; drawUnits();
+  };
+})();
+</script>
+</body>
+</html>

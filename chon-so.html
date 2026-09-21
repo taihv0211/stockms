@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chọn số hộ chiếu · Quản lý APT</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<script src="js/data.js"></script>
+<script src="js/shell.js"></script>
+<script>
+/* Chọn số hộ chiếu — bản thiết kế khách hàng KHÔNG có màn hình này (thiếu "màn hình 12").
+   Dựng tạm để nút "Chọn số" ở Tổng quan và mục menu không bị cụt. */
+(function () {
+  var el = APT.mount('chon-so', 'Chọn số hộ chiếu');
+  if (!el) return;
+  var esc = APT.esc, fmt = APT.fmt, D = APT.data;
+  var prods = APT.products('trong').filter(function (p) { return p.seri; });
+  var pre = (/[?&]sp=([a-z0-9-]+)/.exec(location.search) || [])[1];
+  var pick = null;
+
+  function nextNo(p) { return APT.store.get('next.' + p.id, 10002590 + prods.indexOf(p) * 1000); }
+
+  el.innerHTML =
+    '<div class="banner info">Màn hình này chưa có trong bản thiết kế của khách hàng — tạm dựng để mục menu không bị trống.</div>' +
+    '<div class="pf-grid">' +
+      '<div class="field"><label for="sp">Loại ấn phẩm</label><select class="input" id="sp">' +
+        prods.map(function (p) { return '<option value="' + p.id + '"' + (p.id === pre ? ' selected' : '') + '>' + esc(p.ten) + '</option>'; }).join('') + '</select></div>' +
+      '<div class="field"><label for="kh">Ký hiệu</label><select class="input" id="kh">' +
+        APT.KY_HIEU.map(function (k) { return '<option' + (k === 'G' ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select></div>' +
+      '<div class="field"><label for="sl">Số lượng cần lấy</label><input class="input" id="sl" inputmode="numeric" value="20"></div>' +
+      '<div class="field"><label>Còn trong kho</label><input class="input" id="con" readonly></div>' +
+    '</div>' +
+    '<div class="pf-actions"><button type="button" class="btn" id="go">Chọn số</button></div>' +
+    '<div id="res"></div>';
+
+  function prod() { return prods.filter(function (p) { return p.id === document.getElementById('sp').value; })[0]; }
+  function refresh() { document.getElementById('con').value = fmt(D.khoTrong(prod())); }
+  document.getElementById('sp').onchange = function () { pick = null; document.getElementById('res').innerHTML = ''; refresh(); };
+  refresh();
+
+  document.getElementById('go').onclick = function () {
+    var p = prod(), kh = document.getElementById('kh').value, sl = parseInt(document.getElementById('sl').value.replace(/\D/g, ''), 10) || 0;
+    var res = document.getElementById('res');
+    if (sl < 1) { res.innerHTML = '<div class="banner warn" role="alert">Vui lòng nhập số lượng cần lấy.</div>'; return; }
+    if (sl > D.khoTrong(p)) { res.innerHTML = '<div class="banner bad" role="alert">Trong kho không đủ. Chỉ còn ' + fmt(D.khoTrong(p)) + '.</div>'; return; }
+    var a = nextNo(p), b = a + sl - 1;
+    pick = { p: p, a: a, b: b, kh: kh, sl: sl };
+    res.innerHTML = '<section class="panel" style="margin-top:20px;max-width:700px"><h2>Số được chọn</h2><div class="panel-body">' +
+      '<div style="font-size:26px;font-weight:800">Từ ' + esc(kh) + ' ' + a + ' &nbsp;đến&nbsp; ' + esc(kh) + ' ' + b + '</div>' +
+      '<div>' + esc(p.ten) + ' — ' + fmt(sl) + ' số</div>' +
+      '<div class="pf-actions" style="margin:0"><button type="button" class="btn good" id="ok">Xác nhận sử dụng</button></div></div></section>';
+    document.getElementById('ok').onclick = function () {
+      APT.store.set('next.' + pick.p.id, pick.b + 1);
+      res.innerHTML = '<div class="banner ok" role="status" style="margin-top:20px;max-width:700px">✔ Đã ghi nhận sử dụng ' + fmt(pick.sl) + ' số, từ ' + esc(pick.kh) + ' ' + pick.a + ' đến ' + esc(pick.kh) + ' ' + pick.b + '.</div>';
+      pick = null;
+    };
+  };
+})();
+</script>
+</body>
+</html>
