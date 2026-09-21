@@ -134,6 +134,13 @@
     return '<div class="tbl-wrap"><table class="tbl kho"><thead><tr>' + APT.headCells(prods) + '</tr></thead><tbody><tr>' + cells + '</tr>' + extra + '</tbody></table></div>';
   };
 
+  /* Tên dài: dòng nhỏ "Đại sứ quán Việt Nam tại" + dòng đậm tên nước */
+  function orgName(n) {
+    var k = n.indexOf(' tại ');
+    if (k < 0) return '<span class="org-nm">' + esc(n) + '</span>';
+    return '<span class="org-pre">' + esc(n.slice(0, k + 4)) + '</span><span class="org-nm">' + esc(n.slice(k + 5)) + '</span>';
+  }
+
   /* Bảng theo từng cơ quan đại diện, có dòng "Tổng".
      cellOf(i, p) → số | {pct}.  totalOf(p, idxs) → số | pct.  */
   APT.orgTable = function (prods, idxs, cellOf, totalOf, opts) {
@@ -144,7 +151,7 @@
     var tong = '<tr class="tong"><td class="first stt"></td><td class="first" style="left:52px">Tổng</td>' +
       prods.map(function (p) { return pct ? pctCell(totalOf(p, idxs)) : numCell(totalOf(p, idxs)); }).join('') + '</tr>';
     var rows = idxs.map(function (i) {
-      return '<tr><td class="first stt">' + (i + 1) + '</td><td class="first" style="left:52px">' + esc(APT.ORGS[i]) + '</td>' +
+      return '<tr><td class="first stt">' + (i + 1) + '</td><td class="first" style="left:52px" title="' + esc(APT.ORGS[i]) + '">' + orgName(APT.ORGS[i]) + '</td>' +
         prods.map(function (p) { var v = cellOf(i, p); return pct ? pctCell(v) : numCell(v); }).join('') + '</tr>';
     }).join('');
     return '<div class="tbl-wrap tall"><table class="tbl"><thead><tr>' + head + '</tr></thead><tbody>' + tong + rows + '</tbody></table></div>';
