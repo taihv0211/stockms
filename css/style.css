@@ -265,7 +265,57 @@ textarea.input { min-height: 84px; resize: vertical; }
   .tbl-form thead th.first, .tbl-form td.first { width: 90px; min-width: 90px; max-width: 90px; }
 }
 @media (max-width: 640px) {
-  /* màn hình rất nhỏ: cho cột tên cuộn theo bảng, không che số liệu */
-  .tbl thead th.first, .tbl td.first { position: static; }
+  /* ---------- ĐIỆN THOẠI ---------- */
+  body { font-size: 17px; }
+  .side { width: min(86vw, 300px); height: 100dvh; }
+  .top { padding: 10px 12px; gap: 10px; }
+  .top h1 { font-size: 22px; min-width: 0; flex-basis: 100%; order: 2; }
+  .btn.menu-btn { order: 1; }
+  .who { order: 1; margin-left: auto; flex: 1; min-width: 0; }
+  .who label { display: none; }
+  .who select { flex: 1; min-width: 0; width: 100%; }
+  .content { padding: 14px 12px 48px; }
+  .content > * + * { margin-top: 16px; }
+  .sec-title, .pf-head h2 { font-size: 19px; }
+
+  /* tab và nút: to, xếp dọc, dễ chạm */
+  .seg { gap: 6px; }
+  .seg-btn { flex: 1 1 calc(50% - 6px); padding: 6px 10px; }
+  .seg.sub .seg-btn { flex-basis: 100%; }
+  .filter-row { align-items: stretch; flex-direction: column; gap: 6px; }
+  .filter-row select { min-width: 0; width: 100%; }
+  .pf-actions .btn, .step-b .row .btn, .panel-body .btn, .tra-cuu-form .btn { width: 100%; }
+  .pf-total b { font-size: 24px; }
+
+  /* bảng số liệu: cột tên dính bên trái nhưng hẹp, bỏ cột STT */
+  .tbl th.first.stt, .tbl td.first.stt { display: none; }
+  .tbl thead th.first, .tbl td.first { position: sticky; left: 0 !important; width: 128px; min-width: 128px; max-width: 128px; padding: 8px 6px; }
+  .tbl td.first .org-pre { font-size: 12px; }
+  .tbl td.first .org-nm { font-size: 16px; }
+  .tbl thead th { min-width: 92px; font-size: 13px; }
+  .tbl td { font-size: 17px; padding: 8px 6px; }
+  .tbl.kho td { font-size: 22px; padding: 12px 6px; }
+  .tbl-wrap.tall { max-height: 72dvh; }
+
+  /* bảng nhập phiếu */
+  .tbl-form thead th { min-width: 150px; }
+  .tbl-form thead th.first, .tbl-form td.first { width: 76px; min-width: 76px; max-width: 76px; font-size: 15px; }
+  .rg-x { min-height: 40px; padding: 8px; font-size: 15px; }
+  .rg-add { min-height: 44px; }
+
+  /* danh sách + form */
+  .panel > h2, .steps > h2 { font-size: 19px; padding: 12px 14px; }
+  .panel-body { padding: 14px; }
+  .listbox { max-height: 50dvh; }
+  .listbox li { flex-wrap: wrap; padding: 10px 14px; gap: 6px 10px; }
+  .listbox li .tags { margin-left: 0; flex-basis: 100%; justify-content: flex-start; }
+  .step { padding: 14px; }
+  .status-line { padding: 12px 14px 0; }
+
+  /* đăng nhập */
+  .login-wrap { padding: 20px 12px 40px; }
+  .login-wrap h1 { font-size: 24px; }
+  .acc-grid { grid-template-columns: 1fr; }
+  .kq .tbl td { font-size: 17px; }
 }
 @media (prefers-reduced-motion: reduce) { .side { transition: none; } }
