@@ -14,25 +14,30 @@ Mở `index.html` bằng trình duyệt là dùng được, không cần cài g�
 | 8, 9 | Báo cáo sử dụng | `su-dung.html` |
 | 10 | Tra cứu APT theo seri | `tra-cuu.html` |
 | 11 | Điều chuyển APT | `dieu-chuyen.html` |
-| 12 | *(không có trong thiết kế)* Chọn số hộ chiếu — dựng tạm | `chon-so.html` |
+| 12 | *(không có trong thiết kế)* Chọn số hộ chiếu: danh sách số đẹp để Lãnh đạo cấp cho cá nhân/tập thể | `chon-so.html` |
 | 13 | Quản lý tham số → Tên ấn phẩm | `tham-so-an-pham.html` |
 | 14 | Quản lý tham số → Tên đơn vị | `tham-so-don-vi.html` |
 | 15 | Quản lý tài khoản | `tai-khoan.html` |
 
-Ngoài ra `index.html` là trang chọn tài khoản để xem theo từng quyền.
+Ngoài ra `index.html` là **trang đăng nhập 2 lớp**:
+
+1. Bước 1: tên đăng nhập + mật khẩu.
+2. Bước 2: mã 6 số, nhận từ ứng dụng xác thực (Authenticator) hoặc email. Sai quá 5 lần thì phải đăng nhập lại.
+
+Bản xem thử: mật khẩu và mã xác thực đều là `123456`. Khung "Tài khoản dùng thử" trên trang này để điền nhanh tên đăng nhập.
 
 ## Quyền xem thử
 
-Chọn tài khoản ở `index.html`, hoặc đổi nhanh bằng ô **"Xem thử với quyền"** ở góc phải mỗi trang.
+Đăng nhập bằng một tài khoản ở `index.html`, hoặc đổi nhanh bằng ô **"Xem thử với quyền"** ở góc phải mỗi trang.
 Quyền nằm ở `APT.ROLES` trong `js/data.js` (đây là **giả định của mình**, cần khách hàng xác nhận):
 
 | Tài khoản | Vào được | Làm được |
 |---|---|---|
 | admin | tất cả | mọi thứ |
-| ctr, pctr (LĐC1, LĐC2) | Tổng quan, Xuất/Nhập, Báo cáo, Tra cứu, Điều chuyển | xem; duyệt bước "Lãnh đạo Cục" |
+| ctr, pctr (LĐC1, LĐC2) | Tổng quan, Xuất/Nhập, Báo cáo, Tra cứu, Điều chuyển, Chọn số hộ chiếu | xem; duyệt bước "Lãnh đạo Cục"; cấp số hộ chiếu đẹp |
 | kho | Xuất/Nhập, Báo cáo, Tra cứu, Điều chuyển | lập và xác nhận phiếu |
 | vp | Xuất kho, Báo cáo, Tra cứu, Điều chuyển | duyệt bước "Lãnh đạo VP" |
-| lsnn, xnc | Báo cáo sử dụng, Tra cứu, Điều chuyển, Chọn số hộ chiếu (chỉ trong nước) | lập phiếu điều chuyển |
+| lsnn, xnc | Báo cáo sử dụng, Tra cứu, Điều chuyển, Chọn số hộ chiếu (chỉ trong nước) | lập phiếu điều chuyển; chỉ xem danh sách số đẹp |
 | ant (ĐSQVN) | Giao nhận, Sử dụng, Tra cứu (chỉ ngoài nước) | chỉ xem số liệu của chính cơ quan mình |
 
 ## Thử luồng duyệt xuất kho
@@ -42,6 +47,8 @@ Quyền nằm ở `APT.ROLES` trong `js/data.js` (đây là **giả định củ
 3. Đổi quyền sang **ctr** → **Duyệt**.
 
 Phiếu được nhớ trong trình duyệt. Nút "Xóa các phiếu và dữ liệu đã nhập thử" ở `index.html` để làm lại từ đầu.
+
+Lưu ý: ô "Xem thử với quyền" và đường dẫn có `?role=` là lối tắt chỉ dành cho bản xem thử, bỏ qua bước đăng nhập. Bản thật phải bỏ đi.
 
 ## Ghi chú
 

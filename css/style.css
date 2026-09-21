@@ -232,20 +232,29 @@ textarea.input { min-height: 84px; resize: vertical; }
 .check-scroll { max-height: 260px; overflow: auto; display: flex; flex-direction: column; gap: 8px; padding: 2px; }
 
 /* ---------- ĐĂNG NHẬP ---------- */
-.login-wrap { max-width: 980px; margin: 0 auto; padding: 32px 20px 60px; }
-.login-wrap h1 { font-size: 30px; margin-bottom: 6px; }
-.login-wrap .lead { color: var(--ink-2); margin-bottom: 24px; }
-.acc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; }
-.acc {
-  display: flex; flex-direction: column; gap: 6px; text-align: left; cursor: pointer;
-  background: #fff; border: 2px solid var(--line); border-radius: 8px; padding: 16px 18px; color: inherit; text-decoration: none;
-}
-.acc:hover { border-color: var(--brand); background: var(--brand-soft); }
-.acc b { font-size: 21px; }
-.acc .u { font-size: 15px; color: var(--ink-2); }
-.acc .d { font-size: 16px; }
-.acc .go { margin-top: 6px; font-weight: 700; color: var(--brand); }
-.login-foot { margin-top: 30px; font-size: 16px; }
+.login-page { max-width: 520px; margin: 0 auto; padding: 32px 16px 60px; display: flex; flex-direction: column; gap: 20px; }
+.login-brand { text-align: center; }
+.login-brand b { display: block; font-size: 30px; line-height: 1.2; }
+.login-brand span { color: var(--ink-2); }
+.login-card { background: var(--surface); border: 2px solid var(--line); border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+.login-card[hidden] { display: none; }
+.login-card h1 { font-size: 26px; }
+.login-step { font-weight: 700; color: var(--brand); }
+.login-hint { color: var(--ink-2); font-size: 16px; margin: 0; }
+.show-pass { min-height: 44px; margin-top: 4px; }
+.otp-in { font-size: 34px; font-weight: 800; text-align: center; letter-spacing: .4em; padding-left: .4em; min-height: 66px; }
+.mailrow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.mailrow #wait { font-size: 16px; color: var(--ink-2); }
+.login-card .seg-btn { flex: 1 1 0; }
+.demo { background: var(--surface); border: 2px dashed var(--line); border-radius: 8px; padding: 12px 18px; }
+.demo summary { cursor: pointer; font-weight: 700; min-height: 40px; display: flex; align-items: center; }
+.demo-info { margin: 6px 0 12px; font-size: 16px; }
+.demo-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.demo-acc { display: flex; flex-direction: column; text-align: left; gap: 2px; min-height: 56px; padding: 8px 12px; border: 2px solid var(--line); border-radius: 8px; background: #fff; cursor: pointer; }
+.demo-acc:hover { border-color: var(--brand); background: var(--brand-soft); }
+.demo-acc b { font-size: 16px; }
+.demo-acc span { font-size: 14px; color: var(--ink-2); }
+.login-foot { margin-top: 14px; font-size: 16px; }
 .login-foot button { background: none; border: 0; padding: 0; color: var(--brand); text-decoration: underline; cursor: pointer; font-size: 16px; }
 
 .tra-cuu-form { display: grid; grid-template-columns: minmax(220px, 1.3fr) minmax(120px, .5fr) minmax(200px, 1fr) auto; gap: 14px; align-items: end; max-width: 980px; }
@@ -313,9 +322,32 @@ textarea.input { min-height: 84px; resize: vertical; }
   .status-line { padding: 12px 14px 0; }
 
   /* đăng nhập */
-  .login-wrap { padding: 20px 12px 40px; }
-  .login-wrap h1 { font-size: 24px; }
-  .acc-grid { grid-template-columns: 1fr; }
+  .login-page { padding: 20px 12px 40px; }
+  .login-card { padding: 18px 16px; }
+  .login-card .btn { width: 100%; }
+  .otp-in { font-size: 30px; letter-spacing: .3em; }
   .kq .tbl td { font-size: 17px; }
 }
 @media (prefers-reduced-motion: reduce) { .side { transition: none; } }
+
+/* ---------- CHỌN SỐ HỘ CHIẾU (danh sách số đẹp) ---------- */
+.cs-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px 20px; max-width: 1100px; }
+.tbl-cs thead th { min-width: 0; }
+.tbl-cs th.lft, .tbl-cs td.lft { text-align: left; }
+.tbl-cs td.ctr { text-align: center; }
+.tbl-cs td { background: #fff; vertical-align: middle; padding: 12px 14px; }
+.tbl-cs tbody tr:nth-child(even) td { background: #f6f8fa; }
+.cs-num { font-size: 24px; font-variant-numeric: tabular-nums; letter-spacing: .02em; white-space: nowrap; }
+.cs-num b { color: var(--brand-dark); background: #fff3c4; padding: 0 4px; border-radius: 4px; }
+.cs-sub { font-size: 15px; color: var(--ink-2); font-weight: 400; }
+dialog { border: 2px solid var(--line); border-radius: 8px; padding: 0; width: min(520px, calc(100% - 24px)); color: var(--ink); }
+dialog::backdrop { background: rgba(0, 0, 0, .45); }
+.dlg-body { padding: 22px; display: flex; flex-direction: column; gap: 16px; }
+.dlg-body h2 { font-size: 22px; }
+.dlg-num { font-size: 24px; font-weight: 800; color: var(--brand-dark); }
+.dlg-act { display: flex; gap: 12px; flex-wrap: wrap; }
+@media (max-width: 640px) {
+  .cs-num { font-size: 20px; }
+  .tbl-cs td { padding: 10px 8px; }
+  .dlg-act .btn { width: 100%; }
+}

@@ -7,27 +7,147 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<div class="login-wrap">
-  <h1>Quản lý APT — Cục Lãnh sự</h1>
-  <p class="lead">Bản xem thử giao diện. Chọn một tài khoản để xem màn hình theo đúng quyền của tài khoản đó.</p>
-  <div class="acc-grid" id="acc"></div>
-  <p class="login-foot"><button type="button" id="reset">Xóa các phiếu và dữ liệu đã nhập thử</button></p>
+<div class="login-page">
+  <header class="login-brand">
+    <b>Quản lý APT</b>
+    <span>Cục Lãnh sự</span>
+  </header>
+
+  <!-- BƯỚC 1: tên đăng nhập + mật khẩu -->
+  <form class="login-card" id="step1" autocomplete="on" novalidate>
+    <div class="login-step">Bước 1 / 2</div>
+    <h1>Đăng nhập</h1>
+    <div class="field">
+      <label for="user">Tên đăng nhập</label>
+      <input class="input" id="user" name="username" autocomplete="username" autocapitalize="none" spellcheck="false">
+    </div>
+    <div class="field">
+      <label for="pass">Mật khẩu</label>
+      <input class="input" id="pass" name="password" type="password" autocomplete="current-password">
+      <label class="check show-pass"><input type="checkbox" id="show"> Hiện mật khẩu</label>
+    </div>
+    <div id="err1" aria-live="assertive"></div>
+    <button class="btn" type="submit">Tiếp tục</button>
+  </form>
+
+  <!-- BƯỚC 2: xác thực 2 lớp -->
+  <form class="login-card" id="step2" hidden autocomplete="off" novalidate>
+    <div class="login-step">Bước 2 / 2 — Xác thực 2 lớp</div>
+    <h1>Nhập mã xác thực</h1>
+    <div class="seg" id="method" role="tablist" aria-label="Cách nhận mã"></div>
+    <p class="login-hint" id="hint"></p>
+    <div class="field">
+      <label for="otp">Mã gồm 6 chữ số</label>
+      <input class="input otp-in" id="otp" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" placeholder="––––––">
+    </div>
+    <div id="mailrow" class="mailrow" hidden>
+      <button type="button" class="btn secondary small" id="send">Gửi mã về email</button>
+      <span id="wait"></span>
+    </div>
+    <div id="err2" aria-live="assertive"></div>
+    <button class="btn" type="submit">Xác nhận và đăng nhập</button>
+    <button class="btn secondary" type="button" id="back">Quay lại</button>
+  </form>
+
+  <details class="demo" id="demo" open>
+    <summary>Tài khoản dùng thử (bản xem thử)</summary>
+    <p class="demo-info">Mật khẩu của mọi tài khoản: <b>123456</b>. Mã xác thực: <b>123456</b>.</p>
+    <div class="demo-list" id="demo-list"></div>
+    <p class="login-foot"><button type="button" id="reset">Xóa các phiếu và dữ liệu đã nhập thử</button></p>
+  </details>
 </div>
+
 <script src="js/data.js"></script>
+<script src="js/shell.js"></script>
 <script>
+/* Đăng nhập 2 bước (bản xem thử: mật khẩu và mã xác thực đều là 123456).
+   Thật sự sẽ kiểm tra ở máy chủ; mã 6 số do ứng dụng Authenticator hoặc email cấp. */
 (function () {
-  var esc = APT.esc;
-  document.getElementById('acc').innerHTML = APT.ROLE_ORDER.map(function (k) {
+  var esc = APT.esc, PASS = '123456', CODE = '123456', MAX_TRY = 5, WAIT = 30;
+  var nav = APT.navigate || function (u) { location.href = u; };
+  var $ = function (id) { return document.getElementById(id); };
+  var pending = null, tries = 0, method = 'app', timer = null;
+
+  // vào trang đăng nhập = đã đăng xuất
+  APT.store.set('role', null);
+
+  function alertBox(id, html) {
+    $(id).innerHTML = html ? '<div class="banner bad" role="alert">' + html + '</div>' : '';
+  }
+
+  /* ---- tài khoản dùng thử ---- */
+  $('demo-list').innerHTML = APT.ROLE_ORDER.map(function (k) {
     var r = APT.ROLES[k];
-    return '<a class="acc" href="' + r.home + '?role=' + k + '">' +
-      '<b>' + esc(r.ten) + '</b>' +
-      '<span class="u">Tên đăng nhập: ' + esc(r.user) + '</span>' +
-      '<span class="d">' + esc(r.mota) + '</span>' +
-      '<span class="go">Đăng nhập →</span></a>';
+    return '<button type="button" class="demo-acc" data-u="' + k + '"><b>' + esc(r.ten) + '</b><span>' + esc(r.user) + '</span></button>';
   }).join('');
-  document.getElementById('reset').onclick = function () {
+  $('demo-list').addEventListener('click', function (e) {
+    var b = e.target.closest('.demo-acc'); if (!b) return;
+    $('user').value = APT.ROLES[b.getAttribute('data-u')].user; $('pass').value = PASS;
+    alertBox('err1', ''); $('pass').focus();
+  });
+  $('reset').onclick = function () {
     if (confirm('Xóa toàn bộ phiếu và dữ liệu đã nhập thử?')) { APT.store.clearAll(); alert('Đã xóa.'); }
   };
+  $('show').onchange = function () { $('pass').type = this.checked ? 'text' : 'password'; };
+
+  /* ---- bước 1 ---- */
+  function keyOf(u) {
+    u = u.trim().toLowerCase();
+    return APT.ROLE_ORDER.filter(function (k) { return APT.ROLES[k].user === u; })[0] || null;
+  }
+  $('step1').onsubmit = function (e) {
+    e.preventDefault();
+    var u = $('user').value.trim(), p = $('pass').value;
+    if (!u || !p) { alertBox('err1', 'Vui lòng nhập tên đăng nhập và mật khẩu.'); return; }
+    var k = keyOf(u);
+    if (!k || p !== PASS) { alertBox('err1', 'Tên đăng nhập hoặc mật khẩu không đúng.'); return; }
+    alertBox('err1', '');
+    pending = k; tries = 0; $('otp').value = '';
+    setMethod('app');
+    $('step1').hidden = true; $('step2').hidden = false; $('otp').focus();
+  };
+
+  /* ---- bước 2 ---- */
+  function setMethod(m) {
+    method = m;
+    APT.tabs($('method'), [{ id: 'app', ten: 'Ứng dụng xác thực' }, { id: 'mail', ten: 'Email' }], m, function (id) { setMethod(id); $('otp').focus(); });
+    $('mailrow').hidden = m !== 'mail';
+    $('hint').textContent = m === 'app'
+      ? 'Mở ứng dụng xác thực (Google Authenticator, Microsoft Authenticator…) trên điện thoại và nhập mã 6 số đang hiện cho tài khoản này.'
+      : 'Bấm “Gửi mã về email”. Mã gồm 6 số sẽ được gửi tới hộp thư đã đăng ký của tài khoản và có hiệu lực trong 5 phút.';
+    alertBox('err2', '');
+    if (m === 'mail') { $('wait').textContent = ''; $('send').disabled = false; }
+  }
+  $('send').onclick = function () {
+    var left = WAIT; $('send').disabled = true;
+    function tick() {
+      if (left <= 0) { $('wait').textContent = ''; $('send').disabled = false; $('send').textContent = 'Gửi lại mã'; return; }
+      $('wait').textContent = 'Đã gửi mã. Có thể gửi lại sau ' + left + ' giây.'; left--; timer = setTimeout(tick, 1000);
+    }
+    clearTimeout(timer); tick();
+  };
+  $('otp').addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 6); });
+
+  $('step2').onsubmit = function (e) {
+    e.preventDefault();
+    var c = $('otp').value;
+    if (c.length !== 6) { alertBox('err2', 'Vui lòng nhập đủ 6 chữ số.'); return; }
+    if (c !== CODE) {
+      tries++;
+      if (tries >= MAX_TRY) {
+        goBack(); alertBox('err1', 'Đã nhập sai mã quá ' + MAX_TRY + ' lần. Vui lòng đăng nhập lại.'); return;
+      }
+      alertBox('err2', 'Mã không đúng. Bạn còn ' + (MAX_TRY - tries) + ' lần thử.'); $('otp').select(); return;
+    }
+    APT.store.set('role', pending);
+    nav(APT.ROLES[pending].home + '?role=' + pending);
+  };
+  function goBack() {
+    clearTimeout(timer); pending = null; $('pass').value = '';
+    $('step2').hidden = true; $('step1').hidden = false; alertBox('err2', ''); $('pass').focus();
+  }
+  $('back').onclick = function () { goBack(); alertBox('err1', ''); };
+  $('user').focus();
 })();
 </script>
 </body>

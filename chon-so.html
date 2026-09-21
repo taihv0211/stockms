@@ -10,53 +10,128 @@
 <script src="js/data.js"></script>
 <script src="js/shell.js"></script>
 <script>
-/* Chọn số hộ chiếu — bản thiết kế khách hàng KHÔNG có màn hình này (thiếu "màn hình 12").
-   Dựng tạm để nút "Chọn số" ở Tổng quan và mục menu không bị cụt. */
+/* Chọn số hộ chiếu — danh sách các số seri "đẹp" còn trong kho để Lãnh đạo cấp cho
+   một cá nhân hoặc tập thể. Người nhận không cần lưu thành tài khoản: chỉ ghi lại
+   số này đã cấp cho ai, ngày nào, ai cấp. */
 (function () {
   var el = APT.mount('chon-so', 'Chọn số hộ chiếu');
   if (!el) return;
-  var esc = APT.esc, fmt = APT.fmt, D = APT.data;
-  var prods = APT.products('trong').filter(function (p) { return p.seri; });
-  var pre = (/[?&]sp=([a-z0-9-]+)/.exec(location.search) || [])[1];
-  var pick = null;
+  var esc = APT.esc, canGrant = !!APT.role.act.capSo;
 
-  function nextNo(p) { return APT.store.get('next.' + p.id, 10002590 + prods.indexOf(p) * 1000); }
+  /* 4 loại hộ chiếu trong nước có seri; mỗi loại 1 ký hiệu + 1 dải số */
+  var PASSPORTS = [
+    { id: 'hcng-kc', kh: 'G', base: 10000000 },
+    { id: 'hccv-kc', kh: 'C', base: 20000000 },
+    { id: 'hcng-cc', kh: 'H', base: 30000000 },
+    { id: 'hccv-cc', kh: 'V', base: 40000000 }
+  ];
+  /* 4 số cuối tạo nên "số đẹp" */
+  var TAILS = [
+    ['0000', 'Số tròn'], ['1000', 'Số tròn'], ['2000', 'Số tròn'], ['5000', 'Số tròn'],
+    ['1111', 'Số lặp'], ['2222', 'Số lặp'], ['3333', 'Số lặp'], ['5555', 'Số lặp'], ['6666', 'Số lặp'], ['8888', 'Số lặp'], ['9999', 'Số lặp'],
+    ['1234', 'Số tiến'], ['2345', 'Số tiến'], ['3456', 'Số tiến'], ['4567', 'Số tiến'], ['5678', 'Số tiến'], ['6789', 'Số tiến'],
+    ['6868', 'Lộc phát'], ['8686', 'Lộc phát'], ['6688', 'Lộc phát'], ['8668', 'Lộc phát'], ['3939', 'Lộc phát'], ['7979', 'Lộc phát'],
+    ['1221', 'Số gương'], ['1331', 'Số gương'], ['2002', 'Số gương'], ['6116', 'Số gương']
+  ];
+  var KINDS = ['Số tròn', 'Số lặp', 'Số tiến', 'Lộc phát', 'Số gương'];
+  var WHO = ['Nguyễn Văn A', 'Trần Thị B', 'Lê Văn C', 'Đoàn công tác Bộ X', 'Phạm Thị D', 'Đoàn đại biểu Quốc hội'];
+
+  var grants = APT.store.get('chonso', {});
+  function listFor(pp) {
+    var out = [];
+    [0, 1].forEach(function (blk) {
+      TAILS.forEach(function (t) {
+        var num = pp.base + blk * 10000 + parseInt(t[0], 10);
+        var id = pp.id + '|' + pp.kh + num;
+        var g = grants[id];
+        if (!g && APT.data.rand('cs' + id) < 0.2) {   // vài số đã cấp sẵn cho có dữ liệu mẫu
+          g = { ten: WHO[Math.floor(APT.data.rand('w' + id) * WHO.length)], loai: 'ca-nhan', by: 'Lãnh đạo Cục 1', at: '15/08/2026' };
+        }
+        out.push({ id: id, kh: pp.kh, num: String(num), tail: t[0], kind: t[1], grant: g });
+      });
+    });
+    return out;
+  }
+
+  var prods = PASSPORTS.map(function (pp) {
+    return { pp: pp, p: APT.allProducts().filter(function (x) { return x.id === pp.id; })[0] };
+  });
+  var pre = (/[?&]sp=([a-z0-9-]+)/.exec(location.search) || [])[1];
 
   el.innerHTML =
-    '<div class="banner info">Màn hình này chưa có trong bản thiết kế của khách hàng — tạm dựng để mục menu không bị trống.</div>' +
-    '<div class="pf-grid">' +
-      '<div class="field"><label for="sp">Loại ấn phẩm</label><select class="input" id="sp">' +
-        prods.map(function (p) { return '<option value="' + p.id + '"' + (p.id === pre ? ' selected' : '') + '>' + esc(p.ten) + '</option>'; }).join('') + '</select></div>' +
-      '<div class="field"><label for="kh">Ký hiệu</label><select class="input" id="kh">' +
-        APT.KY_HIEU.map(function (k) { return '<option' + (k === 'G' ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select></div>' +
-      '<div class="field"><label for="sl">Số lượng cần lấy</label><input class="input" id="sl" inputmode="numeric" value="20"></div>' +
-      '<div class="field"><label>Còn trong kho</label><input class="input" id="con" readonly></div>' +
+    '<div class="cs-filters">' +
+      '<div class="field"><label for="sp">Loại hộ chiếu</label><select class="input" id="sp">' +
+        prods.map(function (x) { return '<option value="' + x.pp.id + '"' + (x.pp.id === pre ? ' selected' : '') + '>' + esc(x.p.ten) + '</option>'; }).join('') + '</select></div>' +
+      '<div class="field"><label for="kind">Kiểu số đẹp</label><select class="input" id="kind"><option value="">Tất cả</option>' +
+        KINDS.map(function (k) { return '<option>' + k + '</option>'; }).join('') + '</select></div>' +
+      '<div class="field"><label for="st">Tình trạng</label><select class="input" id="st"><option value="free">Còn trống</option><option value="">Tất cả</option><option value="used">Đã cấp</option></select></div>' +
+      '<div class="field"><label for="q">Tìm số</label><input class="input" id="q" inputmode="numeric" placeholder="Ví dụ: 8888" autocomplete="off"></div>' +
     '</div>' +
-    '<div class="pf-actions"><button type="button" class="btn" id="go">Chọn số</button></div>' +
-    '<div id="res"></div>';
+    '<div id="msg"></div>' +
+    '<p class="sec-note" id="count"></p>' +
+    '<div id="list"></div>' +
+    '<dialog id="dlg" aria-labelledby="dlg-t"><form method="dialog" id="dlg-f" class="dlg-body" novalidate>' +
+      '<h2 id="dlg-t">Cấp số hộ chiếu</h2>' +
+      '<div class="dlg-num" id="dlg-num"></div>' +
+      '<div class="field"><span class="lbl">Cấp cho</span><div class="checks" role="radiogroup" aria-label="Cấp cho">' +
+        '<label class="check"><input type="radio" name="loai" value="ca-nhan" checked> Cá nhân</label>' +
+        '<label class="check"><input type="radio" name="loai" value="tap-the"> Tập thể</label></div></div>' +
+      '<div class="field"><label for="ten">Họ tên / tên tập thể</label><input class="input" id="ten" autocomplete="off"></div>' +
+      '<div class="field"><label for="ghichu">Ghi chú (không bắt buộc)</label><input class="input" id="ghichu" autocomplete="off"></div>' +
+      '<div id="dlg-err"></div>' +
+      '<div class="dlg-act"><button type="submit" class="btn good">Xác nhận cấp</button><button type="button" class="btn secondary" id="dlg-x">Hủy</button></div>' +
+    '</form></dialog>';
 
-  function prod() { return prods.filter(function (p) { return p.id === document.getElementById('sp').value; })[0]; }
-  function refresh() { document.getElementById('con').value = fmt(D.khoTrong(prod())); }
-  document.getElementById('sp').onchange = function () { pick = null; document.getElementById('res').innerHTML = ''; refresh(); };
-  refresh();
+  var cur = null;
+  function draw() {
+    var sel = prods.filter(function (x) { return x.pp.id === $('sp').value; })[0];
+    var kind = $('kind').value, st = $('st').value, q = $('q').value.replace(/\D/g, '');
+    var all = listFor(sel.pp), rows = all.filter(function (r) {
+      return (!kind || r.kind === kind) && (!st || (st === 'free' ? !r.grant : !!r.grant)) && (!q || r.num.indexOf(q) >= 0);
+    });
+    var free = all.filter(function (r) { return !r.grant; }).length;
+    $('count').textContent = 'Có ' + rows.length + ' số phù hợp. Loại này còn ' + free + ' số đẹp chưa cấp.';
+    if (!rows.length) { $('list').innerHTML = '<div class="banner warn">Không có số nào phù hợp. Hãy đổi bộ lọc hoặc xóa ô tìm số.</div>'; return; }
+    $('list').innerHTML = '<div class="tbl-wrap tall"><table class="tbl tbl-cs"><thead><tr><th scope="col" class="lft">Số hộ chiếu</th><th scope="col">Kiểu số</th><th scope="col" class="lft">Tình trạng</th></tr></thead><tbody>' +
+      rows.map(function (r) {
+        var head = r.num.slice(0, -4), num = '<span class="cs-num">' + esc(r.kh) + ' ' + esc(head) + '<b>' + esc(r.tail) + '</b></span>';
+        var status;
+        if (r.grant) {
+          status = '<span class="st-bad">Đã cấp</span> cho <b>' + esc(r.grant.ten) + '</b>' + (r.grant.loai === 'tap-the' ? ' (tập thể)' : '') +
+            '<br><span class="cs-sub">' + esc(r.grant.at) + ' — ' + esc(r.grant.by) + (r.grant.note ? ' — ' + esc(r.grant.note) : '') + '</span>';
+        } else if (canGrant) {
+          status = '<button type="button" class="btn small" data-id="' + esc(r.id) + '">Cấp số này</button>';
+        } else {
+          status = '<span class="st-ok">Còn trống</span>';
+        }
+        return '<tr><td class="lft">' + num + '</td><td class="ctr"><span class="tag">' + esc(r.kind) + '</span></td><td class="lft">' + status + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+  function $(id) { return document.getElementById(id); }
+  ['sp', 'kind', 'st'].forEach(function (id) { $(id).onchange = draw; });
+  $('q').addEventListener('input', draw);
 
-  document.getElementById('go').onclick = function () {
-    var p = prod(), kh = document.getElementById('kh').value, sl = parseInt(document.getElementById('sl').value.replace(/\D/g, ''), 10) || 0;
-    var res = document.getElementById('res');
-    if (sl < 1) { res.innerHTML = '<div class="banner warn" role="alert">Vui lòng nhập số lượng cần lấy.</div>'; return; }
-    if (sl > D.khoTrong(p)) { res.innerHTML = '<div class="banner bad" role="alert">Trong kho không đủ. Chỉ còn ' + fmt(D.khoTrong(p)) + '.</div>'; return; }
-    var a = nextNo(p), b = a + sl - 1;
-    pick = { p: p, a: a, b: b, kh: kh, sl: sl };
-    res.innerHTML = '<section class="panel" style="margin-top:20px;max-width:700px"><h2>Số được chọn</h2><div class="panel-body">' +
-      '<div style="font-size:26px;font-weight:800">Từ ' + esc(kh) + ' ' + a + ' &nbsp;đến&nbsp; ' + esc(kh) + ' ' + b + '</div>' +
-      '<div>' + esc(p.ten) + ' — ' + fmt(sl) + ' số</div>' +
-      '<div class="pf-actions" style="margin:0"><button type="button" class="btn good" id="ok">Xác nhận sử dụng</button></div></div></section>';
-    document.getElementById('ok').onclick = function () {
-      APT.store.set('next.' + pick.p.id, pick.b + 1);
-      res.innerHTML = '<div class="banner ok" role="status" style="margin-top:20px;max-width:700px">✔ Đã ghi nhận sử dụng ' + fmt(pick.sl) + ' số, từ ' + esc(pick.kh) + ' ' + pick.a + ' đến ' + esc(pick.kh) + ' ' + pick.b + '.</div>';
-      pick = null;
-    };
+  var dlg = $('dlg');
+  $('list').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-id]'); if (!b) return;
+    var id = b.getAttribute('data-id'), sel = prods.filter(function (x) { return x.pp.id === $('sp').value; })[0];
+    cur = listFor(sel.pp).filter(function (r) { return r.id === id; })[0];
+    $('dlg-num').textContent = cur.kh + ' ' + cur.num + ' — ' + sel.p.ten;
+    $('ten').value = ''; $('ghichu').value = ''; $('dlg-err').innerHTML = '';
+    dlg.showModal(); $('ten').focus();
+  });
+  $('dlg-x').onclick = function () { dlg.close(); };
+  $('dlg-f').onsubmit = function (e) {
+    e.preventDefault();
+    var ten = $('ten').value.trim();
+    if (!ten) { $('dlg-err').innerHTML = '<div class="banner bad" role="alert">Vui lòng nhập họ tên hoặc tên tập thể.</div>'; $('ten').focus(); return; }
+    grants[cur.id] = { ten: ten, loai: document.querySelector('input[name=loai]:checked').value, by: APT.role.ten, at: APT.now(), note: $('ghichu').value.trim() };
+    APT.store.set('chonso', grants);
+    dlg.close();
+    $('msg').innerHTML = '<div class="banner ok" role="status">✔ Đã cấp số ' + esc(cur.kh + ' ' + cur.num) + ' cho ' + esc(ten) + '.</div>';
+    draw();
   };
+  draw();
 })();
 </script>
 </body>
